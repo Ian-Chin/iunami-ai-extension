@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Optional: Keep your body reset */
+body {
+  margin: 0;
+  background-color: #f9fafb;
+}
