@@ -1,10 +1,6 @@
 <img width="1584" height="396" alt="Image" src="https://github.com/user-attachments/assets/b311ce3c-c359-4fd3-81f6-53599fab3cfd" />
 
-Since you requested a GitHub README in HTML format, this is designed to be pasted directly into your README.md. GitHub's Markdown renderer supports HTML, allowing for more control over alignment, images, and layout.
-
-HTML
 <div align="center">
-  <img src="https://raw.githubusercontent.com/your-username/iunami-extension/main/public/icon128.png" alt="Iunami.AI Logo" width="80" />
   <h1>Iunami.AI</h1>
   <p><strong>A sleek, voice-powered bridge between your thoughts and your Notion Workspace.</strong></p>
 
@@ -60,4 +56,5 @@ Click Load unpacked and select the dist folder in your project directory.
 <table width="100%"> <tr> <td width="50%"><strong>Framework</strong></td> <td>React 18 + Vite</td> </tr> <tr> <td><strong>Styling</strong></td> <td>Tailwind CSS v4 (PostCSS)</td> </tr> <tr> <td><strong>Icons</strong></td> <td>Lucide React</td> </tr> <tr> <td><strong>API</strong></td> <td>Notion API (via Chrome Service Worker)</td> </tr> <tr> <td><strong>Storage</strong></td> <td>Chrome Local Storage API</td> </tr> </table>
 
 📸 Screenshots
-<div align="center"> <p><em>(Replace these with your actual screenshots)</em></p> <img src="https://www.google.com/search?q=https://via.placeholder.com/350x500%3Ftext%3DDashboard%2BView" width="300" /> <img src="https://www.google.com/search?q=https://via.placeholder.com/350x500%3Ftext%3DSettings%2BView" width="300" /> </div>
+Build in Progress... <br>
+Coming Soon..
