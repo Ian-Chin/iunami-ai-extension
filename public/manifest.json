@@ -2,7 +2,13 @@
   "manifest_version": 3,
   "name": "Iunami.AI",
   "version": "1.0.0",
-  "description": "Voice-powered Notion calendar assistant",
+  "description": "Supercharge your Notion workflow with high-speed AI voice and text parsing powered by Iunami.AI.",
+  "icons": {
+    "16": "/iunami-simple.png",
+    "32": "/iunami-simple.png",
+    "48": "/iunami-simple.png",
+    "128": "/iunami-simple.png"
+  },
   "permissions": [
     "storage", 
     "sidePanel"

@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
-import Dashboard from './components/Dashboard'; // Import your new Dashboard
+import MoreInfo from './components/More';
 import { Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 
 function App() {
-  const [showSettings, setShowSettings] = useState(false);
+  const [view, setView] = useState('dashboard');
   const [hasConfig, setHasConfig] = useState(false);
 
-  // Check if user is already set up
   useEffect(() => {
     chrome.storage.local.get(['notionToken'], (res) => {
       if (!res.notionToken) {
-        setShowSettings(true);
+        setView('settings');
       } else {
         setHasConfig(true);
       }
     });
   }, []);
 
-  // This function is what Settings calls when it's done
   const handleSetupComplete = () => {
     setHasConfig(true);
-    setShowSettings(false);
+    setView('dashboard');
   };
 
   return (
@@ -36,23 +35,29 @@ function App() {
           />
         </div>
 
-        {/* Only show the toggle if the user has a config saved */}
+        {/* Right-Aligned Navigation Toggle */}
         {hasConfig && (
           <button
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={() => setView(view === 'dashboard' ? 'more' : 'dashboard')}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500"
           >
-            {showSettings ? <ArrowLeft size={20} /> : <SettingsIcon size={20} />}
+            {view === 'dashboard' ? <SettingsIcon size={20} /> : <ArrowLeft size={20} />}
           </button>
         )}
       </div>
 
       {/* Main Content Area */}
       <main className="h-[calc(100vh-56px)] overflow-y-auto">
-        {showSettings ? (
+        {view === 'settings' && (
           <Settings onComplete={handleSetupComplete} />
-        ) : (
-          <Dashboard onAddClick={() => setShowSettings(true)} />
+        )}
+        
+        {view === 'more' && (
+          <MoreInfo />
+        )}
+
+        {view === 'dashboard' && (
+          <Dashboard onAddClick={() => setView('settings')} />
         )}
       </main>
     </div>

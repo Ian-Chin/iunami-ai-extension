@@ -13,5 +13,5 @@
     "jsx": "react-jsx",
     "strict": true
   },
-  "include": ["src", "service-worker.js", "public/service-worker.js"]
+  "include": ["src", "dist/service-worker.js", "public/service-worker.js"]
 }
