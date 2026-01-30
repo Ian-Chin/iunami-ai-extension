@@ -129,54 +129,108 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
         return JSON.parse(data.choices[0].message.content);
     };
 
-    const handleMagicSubmit = async (dbId: string) => {
-        if (!magicText.trim()) return;
+const handleMagicSubmit = async (dbId: string) => {
+    if (!magicText.trim()) return;
 
-        const storage = await chrome.storage.local.get(['lastAiUse']);
-        const lastUsed = storage.lastAiUse as number | undefined;
-        const now = Date.now();
+    setIsMagicLoading(true);
 
-        if (lastUsed && (now - lastUsed < 3000)) {
-            return alert("Slow down! Magic needs a second to recharge.");
-        }
+    chrome.storage.local.get(['notionToken'], async (res) => {
+        try {
+            // 1. Fetch the LATEST schema from Notion
+            const schemaRes = await chrome.runtime.sendMessage({ 
+                type: 'NOTION_API_CALL', 
+                endpoint: `/databases/${dbId}`, 
+                method: 'GET', 
+                token: res.notionToken 
+            });
 
-        await chrome.storage.local.set({ lastAiUse: now });
-        setIsMagicLoading(true);
+            if (!schemaRes.success) throw new Error("Could not read database structure.");
 
-        chrome.storage.local.get(['notionToken'], async (res) => {
-            try {
-                const schemaRes = await chrome.runtime.sendMessage({ type: 'NOTION_API_CALL', endpoint: `/databases/${dbId}`, method: 'GET', token: res.notionToken });
-                if (!schemaRes.success) throw new Error("Failed to fetch schema");
+            const fullSchema = schemaRes.data.properties;
+            
+            // 2. Filter out Read-Only columns (Formulas, Rollups)
+            const writableSchema = Object.keys(fullSchema).reduce((acc: any, key) => {
+                const prop = fullSchema[key];
+                if (!['formula', 'rollup', 'created_time', 'last_edited_time'].includes(prop.type)) {
+                    acc[key] = prop;
+                }
+                return acc;
+            }, {});
 
-                const schema = schemaRes.data.properties;
-                const aiData = await parseWithAI(magicText, schema);
-                const notionProperties: any = {};
+            // 3. Send ONLY writable columns to AI
+            const aiData = await parseWithAI(magicText, writableSchema);
+            const notionProperties: any = {};
 
-                Object.keys(aiData).forEach((key) => {
-                    const actualKey = Object.keys(schema).find(k => k.toLowerCase() === key.toLowerCase());
-                    if (actualKey) {
-                        const type = schema[actualKey].type;
-                        const val = aiData[key];
-                        if (type === 'title') notionProperties[actualKey] = { title: [{ text: { content: val } }] };
-                        else if (type === 'date') notionProperties[actualKey] = { date: { start: val } };
-                        else if (type === 'select') notionProperties[actualKey] = { select: { name: val } };
-                        else if (type === 'rich_text') notionProperties[actualKey] = { rich_text: [{ text: { content: val } }] };
+            Object.keys(aiData).forEach((aiKey) => {
+                // Find matching column name (case insensitive)
+                const actualKey = Object.keys(writableSchema).find(k => k.toLowerCase() === aiKey.toLowerCase());
+                
+                if (actualKey) {
+                    const config = writableSchema[actualKey];
+                    const val = aiData[aiKey];
+
+                    // Smart Mapping based on Notion Type
+                    switch (config.type) {
+                        case 'title':
+                            notionProperties[actualKey] = { title: [{ text: { content: val } }] };
+                            break;
+                        case 'date':
+                            notionProperties[actualKey] = { date: { start: val } };
+                            break;
+                        case 'select':
+                            notionProperties[actualKey] = { select: { name: val } };
+                            break;
+                        case 'multi_select':
+                            // AI might return a string, we turn it into an array
+                            const tags = Array.isArray(val) ? val : [val];
+                            notionProperties[actualKey] = { multi_select: tags.map((t: string) => ({ name: t })) };
+                            break;
+                        case 'number':
+                            notionProperties[actualKey] = { number: Number(val) };
+                            break;
+                        case 'checkbox':
+                            notionProperties[actualKey] = { checkbox: Boolean(val) };
+                            break;
+                        case 'rich_text':
+                            notionProperties[actualKey] = { rich_text: [{ text: { content: val } }] };
+                            break;
+                        case 'url':
+                            notionProperties[actualKey] = { url: val };
+                            break;
+                        case 'email':
+                            notionProperties[actualKey] = { email: val };
+                            break;
                     }
-                });
+                }
+            });
 
-                await chrome.runtime.sendMessage({
-                    type: 'NOTION_API_CALL',
-                    endpoint: `/pages`,
-                    method: 'POST',
-                    token: res.notionToken,
-                    body: { parent: { database_id: dbId }, properties: notionProperties }
-                });
+            // 4. Create the page
+            const createRes = await chrome.runtime.sendMessage({
+                type: 'NOTION_API_CALL',
+                endpoint: `/pages`,
+                method: 'POST',
+                token: res.notionToken,
+                body: { 
+                    parent: { database_id: dbId }, 
+                    properties: notionProperties 
+                }
+            });
 
+            if (createRes.success) {
                 setMagicText("");
                 setActiveDbId(null);
-            } catch (err: any) { alert(err.message); } finally { setIsMagicLoading(false); }
-        });
-    };
+                // Optional: Show a success toast
+            } else {
+                throw new Error(createRes.error || "Failed to save to Notion");
+            }
+
+        } catch (err: any) { 
+            alert(`Error: ${err.message}`); 
+        } finally { 
+            setIsMagicLoading(false); 
+        }
+    });
+};
 
 return (
         <div className={`border border-gray-200 rounded-[28px] overflow-hidden bg-white transition-all duration-300 ${isOpen ? 'shadow-lg ring-1 ring-black/5' : 'shadow-sm'}`}>

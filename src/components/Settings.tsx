@@ -13,10 +13,51 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
         });
     }, []);
 
+    // RECURSIVE SCANNER: This function looks inside columns, callouts, etc.
+    const scanForDatabases = async (blockId: string, notionToken: string): Promise<any[]> => {
+        const response = await chrome.runtime.sendMessage({
+            type: 'NOTION_API_CALL',
+            endpoint: `/blocks/${blockId}/children`,
+            method: 'GET',
+            token: notionToken
+        });
+
+        if (!response.success) return [];
+
+        let foundDbs: any[] = [];
+        const blocks = response.data.results;
+
+        for (const block of blocks) {
+            // 1. Check if it's a direct child database
+            if (block.type === 'child_database') {
+                foundDbs.push({
+                    id: block.id,
+                    title: block.child_database.title,
+                    icon: block.icon || null
+                });
+            } 
+            // 2. Check if it's a linked database
+            else if (block.type === 'link_to_database') {
+                // For linked DBs, we'd ideally fetch the source title, 
+                // but for now, we'll flag it by its source ID
+                foundDbs.push({
+                    id: block.link_to_database.database_id,
+                    title: "Linked Database", 
+                    icon: block.icon || null
+                });
+            }
+            // 3. RECURSE: If the block has children (columns, callouts, etc.), scan inside them
+            else if (block.has_children) {
+                const subDbs = await scanForDatabases(block.id, notionToken);
+                foundDbs = [...foundDbs, ...subDbs];
+            }
+        }
+        return foundDbs;
+    };
+
     const handleConnect = async () => {
         if (!token || !dbIdInput) return;
 
-        // 1. Validate the Link/ID Format
         const match = dbIdInput.match(/[a-f0-9]{32}/);
         if (!match) {
             setStatus({ type: 'error', msg: 'Invalid Notion link or ID format.' });
@@ -28,18 +69,16 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
         setStatus({ type: 'idle', msg: '' });
 
         try {
-            // 2. Check if it already exists in our local storage
             const storage = await chrome.storage.local.get(['allDashboards']);
             const existingDashboards = (storage.allDashboards as any[]) || [];
 
-            const isAlreadyAdded = existingDashboards.some(d => d.id === cleanId);
-            if (isAlreadyAdded) {
-                setStatus({ type: 'error', msg: 'This dashboard is already in your Workspaces!' });
+            if (existingDashboards.some(d => d.id === cleanId)) {
+                setStatus({ type: 'error', msg: 'Dashboard already exists!' });
                 setIsLoading(false);
                 return;
             }
 
-            // 3. Proceed with API Calls
+            // Get Page Title & Metadata
             const pageRes = await chrome.runtime.sendMessage({
                 type: 'NOTION_API_CALL',
                 endpoint: `/pages/${cleanId}`,
@@ -47,51 +86,47 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
                 token: token
             });
 
-            // If the API returns 404 or 400, Notion couldn't find the page
             if (!pageRes.success) {
-                setStatus({ type: 'error', msg: 'Notion page not found. Check your Token permissions.' });
+                setStatus({ type: 'error', msg: 'Page not found. Did you invite your Integration?' });
                 setIsLoading(false);
                 return;
             }
 
-            const childrenRes = await chrome.runtime.sendMessage({
-                type: 'NOTION_API_CALL',
-                endpoint: `/blocks/${cleanId}/children`,
-                method: 'GET',
-                token: token
+            // Start the Recursive Scan
+            
+            const allDetectedDbs = await scanForDatabases(cleanId, token);
+
+            // Remove duplicates (in case the same DB is linked twice)
+            const uniqueDbs = Array.from(new Map(allDetectedDbs.map(db => [db.id, db])).values());
+
+            if (uniqueDbs.length === 0) {
+                setStatus({ type: 'error', msg: 'No databases found on this page.' });
+                setIsLoading(false);
+                return;
+            }
+
+            const pageData = pageRes.data;
+            const titleObj = pageData.properties.title || pageData.properties.Name;
+            const dashboardName = titleObj?.title?.[0]?.plain_text || "Untitled Dashboard";
+
+            const newDashboard = {
+                id: cleanId,
+                name: dashboardName,
+                icon: pageData.icon || null,
+                databases: uniqueDbs
+            };
+
+            await chrome.storage.local.set({
+                notionToken: token,
+                allDashboards: [...existingDashboards, newDashboard]
             });
 
-            if (pageRes.success && childrenRes.success) {
-                const pageData = pageRes.data;
-                const titleObj = pageData.properties.title || pageData.properties.Name;
-                const dashboardName = titleObj?.title?.[0]?.plain_text || "Untitled Dashboard";
+            setStatus({ type: 'success', msg: `Synced ${uniqueDbs.length} databases!` });
+            setDbIdInput('');
+            setTimeout(() => onComplete(), 1000);
 
-                const dbs = childrenRes.data.results
-                    .filter((b: any) => b.type === 'child_database')
-                    .map((db: any) => ({
-                        id: db.id,
-                        title: db.child_database.title,
-                        icon: db.icon || null
-                    }));
-
-                const newDashboard = {
-                    id: cleanId,
-                    name: dashboardName,
-                    icon: pageData.icon || null,
-                    databases: dbs
-                };
-
-                await chrome.storage.local.set({
-                    notionToken: token,
-                    allDashboards: [...existingDashboards, newDashboard]
-                });
-
-                setStatus({ type: 'success', msg: `Added ${dashboardName}!` });
-                setDbIdInput('');
-                setTimeout(() => onComplete(), 1000);
-            }
         } catch (err) {
-            setStatus({ type: 'error', msg: 'Connection failed. Check your internet.' });
+            setStatus({ type: 'error', msg: 'Sync failed. Check your connection.' });
         } finally {
             setIsLoading(false);
         }
@@ -99,13 +134,11 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
 
     return (
         <div className="p-6 bg-white h-full flex flex-col gap-6">
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Add Dashboard</h2>
+            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Add Workspace</h2>
 
             <div className="space-y-4">
                 <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
-                        1. Your Secret Token
-                    </label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">1. Secret Token</label>
                     <input
                         type="password"
                         value={token}
@@ -113,17 +146,6 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
                         className="w-full mt-1.5 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
                         placeholder="secret_..."
                     />
-                    {/* Added Tutorial Link Below */}
-                    <div className="mt-2 px-1">
-                        <a
-                            href="https://your-tutorial-link.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[11px] font-bold text-indigo-500 hover:text-indigo-600 underline decoration-indigo-500/30 underline-offset-4 transition-colors"
-                        >
-                            Where do I find my secret token?
-                        </a>
-                    </div>
                 </div>
 
                 <div>
@@ -132,10 +154,7 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
                         type="text"
                         value={dbIdInput}
                         onChange={(e) => setDbIdInput(e.target.value)}
-                        className={`w-full mt-1.5 p-3.5 border rounded-2xl outline-none transition-all ${status.type === 'error' && status.msg.includes('link')
-                                ? 'border-red-200 bg-red-50'
-                                : 'bg-gray-50 border-gray-100 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white'
-                            }`}
+                        className={`w-full mt-1.5 p-3.5 border rounded-2xl outline-none transition-all ${status.type === 'error' ? 'border-red-200 bg-red-50' : 'bg-gray-50 border-gray-100 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white'}`}
                         placeholder="https://www.notion.so/..."
                     />
                 </div>
@@ -146,12 +165,11 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
                     className="w-full py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl disabled:bg-gray-400"
                 >
                     {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Wifi size={20} />}
-                    {isLoading ? 'Connecting...' : 'Connect & Sync'}
+                    {isLoading ? 'Scanning Page...' : 'Sync Workspace'}
                 </button>
 
                 {status.msg && (
-                    <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 animate-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                        }`}>
+                    <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 animate-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                         {status.type === 'success' ? <CheckCircle size={16} /> : <XCircle size={16} />}
                         {status.msg}
                     </div>
