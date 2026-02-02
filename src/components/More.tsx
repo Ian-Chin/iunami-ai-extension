@@ -1,19 +1,53 @@
-import React from 'react';
-import { Sparkles, Star, Github, Globe, ExternalLink, ArrowRight, MessageSquare, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, Star, Github, Globe, ArrowRight, MessageSquare, ChevronRight, Palette } from 'lucide-react';
+
+const THEME_PRESETS = [
+  {
+    key: 'purple-dark',
+    label: 'Purple Dark',
+    gradient: 'linear-gradient(135deg, #1e1b4b, #2e1065)',
+    ring: '#7c3aed',
+  },
+  {
+    key: 'purple-white',
+    label: 'Purple White',
+    gradient: 'linear-gradient(135deg, #ede9fe, #e0e7ff, #ffffff)',
+    ring: '#a78bfa',
+  },
+  {
+    key: 'white',
+    label: 'White',
+    gradient: '#f9fafb',
+    ring: '#d1d5db',
+  },
+] as const;
 
 export default function MoreInfo() {
   const STORE_URL = "https://chromewebstore.google.com/detail/YOUR_EXTENSION_ID";
   const GITHUB_URL = "https://github.com/Ian-Chin";
   const WEBSITE_URL = "https://iunamiai.vercel.app/";
 
+  const [activeTheme, setActiveTheme] = useState('white');
+
+  useEffect(() => {
+    chrome.storage.local.get(['themeColor'], (res) => {
+      setActiveTheme((res.themeColor as string) || 'white');
+    });
+  }, []);
+
+  const handleThemeChange = (key: string) => {
+    setActiveTheme(key);
+    chrome.storage.local.set({ themeColor: key });
+  };
+
   return (
     <div className="px-6 pb-8 space-y-4">
-      <hr className="border-gray-100 my-6" />
-      
+      <hr className="my-6" style={{ borderColor: 'var(--header-border)' }} />
+
       {/* Mobile Announcement Card */}
       <div className="bg-linear-to-br from-indigo-500 to-purple-600 rounded-3xl p-5 text-white shadow-lg shadow-indigo-200 relative overflow-hidden group">
         <Sparkles className="absolute -right-2 -top-2 opacity-20 group-hover:rotate-12 transition-transform" size={80} />
-        
+
         <div className="relative z-10">
           <span className="text-[10px] font-black bg-white/20 px-2 py-1 rounded-full uppercase tracking-widest">Coming Soon</span>
           <h3 className="text-lg font-bold mt-2">Iunami is coming to Mobile</h3>
@@ -31,7 +65,7 @@ export default function MoreInfo() {
       </div>
 
       {/* Review Button */}
-      <a 
+      <a
         href={STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
@@ -49,7 +83,7 @@ export default function MoreInfo() {
         <MessageSquare size={18} className="text-gray-300 group-hover:text-indigo-400 transition-colors" />
       </a>
       <div className="space-y-3">
-        <a 
+        <a
         href={GITHUB_URL}
         target="_blank"
         rel="noopener noreferrer"
@@ -68,7 +102,7 @@ export default function MoreInfo() {
       </a>
 
       {/* Official Website */}
-      <a 
+      <a
         href={WEBSITE_URL}
         target="_blank"
         rel="noopener noreferrer"
@@ -85,6 +119,40 @@ export default function MoreInfo() {
         </div>
         <ChevronRight size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
       </a>
+      </div>
+
+      {/* Theme Picker — at the bottom */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 mt-2">
+        <div className="flex items-center gap-2 mb-4">
+          <Palette size={16} className="text-gray-400" />
+          <span className="text-xs font-bold text-gray-700">Theme</span>
+        </div>
+        <div className="flex gap-3 justify-center">
+          {THEME_PRESETS.map((preset) => (
+            <button
+              key={preset.key}
+              onClick={() => handleThemeChange(preset.key)}
+              className="flex flex-col items-center gap-1.5"
+            >
+              <div
+                className={`w-12 h-12 rounded-2xl border-2 transition-all ${
+                  activeTheme === preset.key
+                    ? 'scale-110 shadow-md'
+                    : 'border-transparent hover:scale-105'
+                }`}
+                style={{
+                  background: preset.gradient,
+                  borderColor: activeTheme === preset.key ? preset.ring : 'transparent',
+                }}
+              />
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                activeTheme === preset.key ? 'text-gray-700' : 'text-gray-400'
+              }`}>
+                {preset.label}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

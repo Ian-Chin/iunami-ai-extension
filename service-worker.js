@@ -31,20 +31,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keeps the message channel open for the async fetch
   }
 });
-async function handleNotionRequest({ endpoint, method, body, token }) {
-  try {
-    const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
-      method: method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json'
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    const data = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
