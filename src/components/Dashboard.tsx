@@ -370,40 +370,52 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
     })();
 
     return (
-        <div className={`border border-gray-200 rounded-[28px] overflow-hidden bg-white transition-all duration-300 ${isOpen ? 'shadow-lg ring-1 ring-black/5' : 'shadow-sm'}`}>
+        <div
+            className={`rounded-[28px] overflow-hidden transition-all duration-300 ${isOpen ? 'shadow-lg' : 'shadow-sm'}`}
+            style={{ background: 'var(--card-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
+        >
             {/* Header Section */}
-            <div onClick={() => setIsOpen(!isOpen)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/50">
+            <div onClick={() => setIsOpen(!isOpen)} className="p-4 flex items-center justify-between cursor-pointer" style={{ background: 'var(--hover-bg)' }}>
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--input-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}>
                         <NotionIcon icon={dash.icon} fallback={LayoutDashboard} />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-bold text-gray-800 tracking-tight leading-none mb-1">{dash.name}</span>
-                        <span className="text-[10px] text-gray-400 font-medium italic">{dash.databases.length} databases</span>
+                        <span className="font-bold tracking-tight leading-none mb-1" style={{ color: 'var(--card-text)' }}>{dash.name}</span>
+                        <span className="text-[10px] font-medium italic" style={{ color: 'var(--card-text-muted)' }}>{dash.databases.length} databases</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <button onClick={handleUpdate} disabled={isUpdating} className="p-2 text-gray-400 hover:text-indigo-600 rounded-lg">
+                    <button onClick={handleUpdate} disabled={isUpdating} className="p-2 hover:text-indigo-600 rounded-lg" style={{ color: 'var(--card-text-muted)' }}>
                         {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="p-2 text-gray-400 hover:text-red-500 rounded-lg">
+                    <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="p-2 hover:text-red-500 rounded-lg" style={{ color: 'var(--card-text-muted)' }}>
                         <Trash2 size={16} />
                     </button>
-                    <div className="ml-1 text-gray-300">{isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
+                    <div className="ml-1" style={{ color: 'var(--card-text-muted)' }}>{isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
                 </div>
             </div>
 
             {isOpen && (
                 <div className="px-4 pb-5 space-y-3">
-                    <div className="h-px bg-gray-100 mx-2 mb-2" />
+                    <div className="h-px mx-2 mb-2" style={{ background: 'var(--divider)' }} />
                     {dash.databases.map((db: any) => (
-                        <div key={db.id} className={`flex flex-col gap-3 p-3.5 rounded-2xl border transition-all ${activeDbId === db.id ? 'bg-indigo-50/40 border-indigo-200' : 'bg-gray-50/50 border-gray-100'}`}>
+                        <div
+                            key={db.id}
+                            className="flex flex-col gap-3 p-3.5 rounded-2xl transition-all"
+                            style={{
+                                background: activeDbId === db.id ? 'var(--hover-bg)' : 'var(--input-bg)',
+                                borderWidth: 1,
+                                borderStyle: 'solid',
+                                borderColor: activeDbId === db.id ? 'var(--card-border)' : 'var(--input-border)'
+                            }}
+                        >
                             <div onClick={() => handleDbClick(db.id)} className="flex items-center gap-3 cursor-pointer group">
-                                <div className="p-1.5 bg-white border border-gray-100 rounded-lg shadow-sm">
+                                <div className="p-1.5 rounded-lg shadow-sm" style={{ background: 'var(--card-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}>
                                     <NotionIcon icon={db.icon} fallback={Database} />
                                 </div>
-                                <span className="text-xs font-bold text-gray-700 flex-1 group-hover:text-indigo-600 transition-colors">{db.title}</span>
-                                {activeDbId === db.id ? <ChevronUp size={14} className="text-indigo-400" /> : <ChevronDown size={14} className="text-gray-300" />}
+                                <span className="text-xs font-bold flex-1 group-hover:text-indigo-600 transition-colors" style={{ color: 'var(--card-text)' }}>{db.title}</span>
+                                {activeDbId === db.id ? <ChevronUp size={14} className="text-indigo-400" /> : <ChevronDown size={14} style={{ color: 'var(--card-text-muted)' }} />}
                             </div>
 
                             {activeDbId === db.id && (
@@ -448,7 +460,7 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
                                                     <div className="flex items-center gap-1.5 text-indigo-500">
                                                         <Sparkles size={10} /><span className="text-[9px] font-black uppercase tracking-widest">Magic Fill</span>
                                                     </div>
-                                                    <div className="text-[8px] text-gray-400 font-bold uppercase tracking-widest opacity-60">
+                                                    <div className="text-[8px] font-bold uppercase tracking-widest opacity-60" style={{ color: 'var(--card-text-muted)' }}>
                                                         Press Enter to Sync
                                                     </div>
                                                 </div>
@@ -458,7 +470,8 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
                                                         value={magicText}
                                                         onChange={(e) => setMagicText(e.target.value)}
                                                         onKeyDown={(e) => handleKeyDown(e, db.id)}
-                                                        className="w-full p-3 text-[11px] bg-white border border-indigo-200 rounded-xl outline-none min-h-15 focus:ring-2 focus:ring-indigo-100 transition-all"
+                                                        className="w-full p-3 text-[11px] rounded-xl outline-none min-h-15 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                                        style={{ background: 'var(--input-focus-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
                                                         placeholder="Try: 'Follow up with John tomorrow'"
                                                     />
                                                     <button
@@ -475,7 +488,8 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
                                             <div className="pt-1">
                                                 <button
                                                     onClick={() => handleOpenManualEntry(db.id)}
-                                                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-xl transition-colors active:scale-[0.98]"
+                                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl transition-colors active:scale-[0.98]"
+                                                    style={{ background: 'var(--card-bg)', color: 'var(--card-text-muted)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
                                                 >
                                                     <ClipboardList size={14} />
                                                     <span className="text-[11px] font-bold">Manual Entry</span>

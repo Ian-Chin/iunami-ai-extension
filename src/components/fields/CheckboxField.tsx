@@ -10,9 +10,8 @@ export default function CheckboxField({ value, onChange }: CheckboxFieldProps) {
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`w-10 h-5.5 rounded-full transition-all relative ${
-        value ? 'bg-indigo-500' : 'bg-gray-200'
-      }`}
+      className="w-10 h-5.5 rounded-full transition-all relative"
+      style={{ background: value ? '#6366f1' : 'var(--input-border)' }}
     >
       <div
         className={`w-4 h-4 bg-white rounded-full shadow-sm absolute top-0.5 transition-all ${

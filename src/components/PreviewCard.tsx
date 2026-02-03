@@ -77,7 +77,8 @@ export default function PreviewCard({
             type="number"
             value={val !== undefined ? String(val) : ''}
             onChange={(e) => updateValue(schema.name, e.target.value ? Number(e.target.value) : '')}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
           />
         );
       case 'date':
@@ -86,7 +87,8 @@ export default function PreviewCard({
             type="date"
             value={String(val ?? '')}
             onChange={(e) => updateValue(schema.name, e.target.value)}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
           />
         );
       default:
@@ -95,7 +97,8 @@ export default function PreviewCard({
             type="text"
             value={String(val ?? '')}
             onChange={(e) => updateValue(schema.name, e.target.value)}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
           />
         );
     }
@@ -114,7 +117,7 @@ export default function PreviewCard({
         {populatedSchemas.map((schema) => (
           <div key={schema.name} className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-gray-600">{schema.name}</span>
+              <span className="text-[10px] font-bold" style={{ color: 'var(--card-text)' }}>{schema.name}</span>
               <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md ${TYPE_BADGES[schema.type] ?? 'bg-gray-100 text-gray-500'}`}>
                 {schema.type}
               </span>
@@ -125,11 +128,11 @@ export default function PreviewCard({
 
         {emptySchemas.length > 0 && (
           <div className="pt-1">
-            <div className="text-[9px] font-bold text-gray-400 mb-1.5">Empty fields (click to add)</div>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: 'var(--card-text-muted)' }}>Empty fields (click to add)</div>
             {emptySchemas.map((schema) => (
               <div key={schema.name} className="space-y-1 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-gray-400">{schema.name}</span>
+                  <span className="text-[10px] font-bold" style={{ color: 'var(--card-text-muted)' }}>{schema.name}</span>
                   <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md opacity-60 ${TYPE_BADGES[schema.type] ?? 'bg-gray-100 text-gray-500'}`}>
                     {schema.type}
                   </span>
@@ -153,7 +156,7 @@ export default function PreviewCard({
             {showSkipped ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
           </button>
           {showSkipped && (
-            <div className="mt-1.5 text-[10px] text-gray-400 pl-4">
+            <div className="mt-1.5 text-[10px] pl-4" style={{ color: 'var(--card-text-muted)' }}>
               {skippedFields.join(', ')}
             </div>
           )}
@@ -165,7 +168,8 @@ export default function PreviewCard({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-xl transition-colors text-[11px] font-bold disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-colors text-[11px] font-bold disabled:opacity-50"
+          style={{ background: 'var(--card-bg)', color: 'var(--card-text-muted)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
         >
           <X size={12} />
           Cancel

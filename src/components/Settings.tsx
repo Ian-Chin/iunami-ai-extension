@@ -133,28 +133,36 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
     };
 
     return (
-        <div className="p-6 bg-white h-full flex flex-col gap-6">
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Add Workspace</h2>
+        <div className="p-6 h-full flex flex-col gap-6" style={{ background: 'var(--card-bg)' }}>
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--card-text)' }}>Add Workspace</h2>
 
             <div className="space-y-4">
                 <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">1. Secret Token</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest italic" style={{ color: 'var(--card-text-muted)' }}>1. Secret Token</label>
                     <input
                         type="password"
                         value={token}
                         onChange={(e) => setToken(e.target.value)}
-                        className="w-full mt-1.5 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+                        className="w-full mt-1.5 p-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
                         placeholder="secret_..."
                     />
                 </div>
 
                 <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">2. Page Link</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest italic" style={{ color: 'var(--card-text-muted)' }}>2. Page Link</label>
                     <input
                         type="text"
                         value={dbIdInput}
                         onChange={(e) => setDbIdInput(e.target.value)}
-                        className={`w-full mt-1.5 p-3.5 border rounded-2xl outline-none transition-all ${status.type === 'error' ? 'border-red-200 bg-red-50' : 'bg-gray-50 border-gray-100 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white'}`}
+                        className="w-full mt-1.5 p-3.5 rounded-2xl outline-none transition-all focus:ring-2 focus:ring-indigo-500/20"
+                        style={{
+                            background: status.type === 'error' ? 'rgba(254, 202, 202, 0.3)' : 'var(--input-bg)',
+                            color: 'var(--card-text)',
+                            borderWidth: 1,
+                            borderStyle: 'solid',
+                            borderColor: status.type === 'error' ? '#fca5a5' : 'var(--input-border)'
+                        }}
                         placeholder="https://www.notion.so/..."
                     />
                 </div>
@@ -162,7 +170,8 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
                 <button
                     onClick={handleConnect}
                     disabled={isLoading}
-                    className="w-full py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl disabled:bg-gray-400"
+                    className="w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl disabled:opacity-50"
+                    style={{ background: 'var(--btn-bg)', color: 'var(--btn-text)' }}
                 >
                     {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Wifi size={20} />}
                     {isLoading ? 'Scanning Page...' : 'Sync Workspace'}

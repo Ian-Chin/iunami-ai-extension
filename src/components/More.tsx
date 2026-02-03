@@ -69,36 +69,38 @@ export default function MoreInfo() {
         href={STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all group"
+        className="flex items-center justify-between p-4 rounded-2xl hover:shadow-md transition-all group"
+        style={{ background: 'var(--card-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
       >
         <div className="flex items-center gap-3">
           <div className="bg-yellow-50 p-2 rounded-xl text-yellow-500">
             <Star size={20} fill="currentColor" />
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-sm">Rate iunami</p>
-            <p className="text-[11px] text-gray-400 font-medium">Support us on the Web Store</p>
+            <p className="font-bold text-sm" style={{ color: 'var(--card-text)' }}>Rate iunami</p>
+            <p className="text-[11px] font-medium" style={{ color: 'var(--card-text-muted)' }}>Support us on the Web Store</p>
           </div>
         </div>
-        <MessageSquare size={18} className="text-gray-300 group-hover:text-indigo-400 transition-colors" />
+        <MessageSquare size={18} style={{ color: 'var(--card-text-muted)' }} className="group-hover:text-indigo-400 transition-colors" />
       </a>
       <div className="space-y-3">
         <a
         href={GITHUB_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-gray-300 hover:bg-gray-50 transition-all group"
+        className="flex items-center justify-between p-4 rounded-2xl transition-all group"
+        style={{ background: 'var(--card-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="bg-gray-100 p-2.5 rounded-xl text-gray-700">
+          <div className="p-2.5 rounded-xl" style={{ background: 'var(--hover-bg)', color: 'var(--card-text)' }}>
             <Github size={18} />
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-sm">iunami Creator</p>
-            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">View on GitHub</p>
+            <p className="font-bold text-sm" style={{ color: 'var(--card-text)' }}>iunami Creator</p>
+            <p className="text-[10px] font-medium uppercase tracking-tighter" style={{ color: 'var(--card-text-muted)' }}>View on GitHub</p>
           </div>
         </div>
-        <ChevronRight size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+        <ChevronRight size={16} style={{ color: 'var(--card-text-muted)' }} className="group-hover:translate-x-1 transition-transform" />
       </a>
 
       {/* Official Website */}
@@ -106,26 +108,27 @@ export default function MoreInfo() {
         href={WEBSITE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
+        className="flex items-center justify-between p-4 rounded-2xl transition-all group"
+        style={{ background: 'var(--card-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
       >
         <div className="flex items-center gap-3">
           <div className="bg-indigo-100 p-2.5 rounded-xl text-indigo-600">
             <Globe size={18} />
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-sm">Official Website</p>
-            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">Learn more at iunami.ai</p>
+            <p className="font-bold text-sm" style={{ color: 'var(--card-text)' }}>Official Website</p>
+            <p className="text-[10px] font-medium uppercase tracking-tighter" style={{ color: 'var(--card-text-muted)' }}>Learn more at iunami.ai</p>
           </div>
         </div>
-        <ChevronRight size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+        <ChevronRight size={16} style={{ color: 'var(--card-text-muted)' }} className="group-hover:translate-x-1 transition-transform" />
       </a>
       </div>
 
       {/* Theme Picker — at the bottom */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-4 mt-2">
+      <div className="rounded-2xl p-4 mt-2" style={{ background: 'var(--card-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}>
         <div className="flex items-center gap-2 mb-4">
-          <Palette size={16} className="text-gray-400" />
-          <span className="text-xs font-bold text-gray-700">Theme</span>
+          <Palette size={16} style={{ color: 'var(--card-text-muted)' }} />
+          <span className="text-xs font-bold" style={{ color: 'var(--card-text)' }}>Theme</span>
         </div>
         <div className="flex gap-3 justify-center">
           {THEME_PRESETS.map((preset) => (
@@ -145,9 +148,10 @@ export default function MoreInfo() {
                   borderColor: activeTheme === preset.key ? preset.ring : 'transparent',
                 }}
               />
-              <span className={`text-[9px] font-bold uppercase tracking-wider ${
-                activeTheme === preset.key ? 'text-gray-700' : 'text-gray-400'
-              }`}>
+              <span
+                className="text-[9px] font-bold uppercase tracking-wider"
+                style={{ color: activeTheme === preset.key ? 'var(--card-text)' : 'var(--card-text-muted)' }}
+              >
                 {preset.label}
               </span>
             </button>

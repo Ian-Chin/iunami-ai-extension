@@ -2,7 +2,7 @@
 
 /* ── Theme tokens ── */
 :root,
-[data-theme="snow"] {
+[data-theme="white"] {
   --page-bg: #f9fafb;
   --page-text: #374151;
   --page-text-muted: #9ca3af;
@@ -17,9 +17,12 @@
   --input-focus-bg: #ffffff;
   --hover-bg: rgba(249, 250, 251, 0.5);
   --divider: #f3f4f6;
+  --btn-bg: #000000;
+  --btn-text: #ffffff;
+  --btn-hover: #1f2937;
 }
 
-[data-theme="lavender"] {
+[data-theme="purple-white"] {
   --page-bg: linear-gradient(160deg, #ede9fe, #e0e7ff, #f5f3ff, #ffffff);
   --page-text: #374151;
   --page-text-muted: #7c3aed;
@@ -34,9 +37,12 @@
   --input-focus-bg: #ffffff;
   --hover-bg: rgba(255, 255, 255, 0.3);
   --divider: rgba(196, 181, 253, 0.2);
+  --btn-bg: #7c3aed;
+  --btn-text: #ffffff;
+  --btn-hover: #6d28d9;
 }
 
-[data-theme="midnight"] {
+[data-theme="purple-dark"] {
   --page-bg: linear-gradient(160deg, #1e1b4b, #2e1065, #1e1b4b);
   --page-text: #e0e7ff;
   --page-text-muted: #a5b4fc;
@@ -51,6 +57,9 @@
   --input-focus-bg: rgba(30, 27, 75, 0.8);
   --hover-bg: rgba(139, 92, 246, 0.1);
   --divider: rgba(139, 92, 246, 0.15);
+  --btn-bg: #8b5cf6;
+  --btn-text: #ffffff;
+  --btn-hover: #7c3aed;
 }
 
 body {

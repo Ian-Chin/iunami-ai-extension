@@ -2,36 +2,59 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import MoreInfo from './components/More';
+import SplashScreen from './components/SplashScreen';
 import { Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 
 function App() {
   const [view, setView] = useState('dashboard');
   const [hasConfig, setHasConfig] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState('white');
+  const [showSplash, setShowSplash] = useState<boolean | null>(null);
 
   useEffect(() => {
-    chrome.storage.local.get(['notionToken', 'themeColor'], (res) => {
+    chrome.storage.local.get(['notionToken', 'themeColor', 'hasSeenSplash'], (res) => {
+      // Check if user has seen splash screen
+      setShowSplash(!res.hasSeenSplash);
+
       if (!res.notionToken) {
         setView('settings');
       } else {
         setHasConfig(true);
       }
       const theme = (res.themeColor as string) || 'white';
+      setCurrentTheme(theme);
       document.documentElement.setAttribute('data-theme', theme);
     });
 
     const onStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }) => {
       if (changes.themeColor?.newValue) {
-        document.documentElement.setAttribute('data-theme', changes.themeColor.newValue as string);
+        const newTheme = changes.themeColor.newValue as string;
+        setCurrentTheme(newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
       }
     };
     chrome.storage.onChanged.addListener(onStorageChange);
     return () => chrome.storage.onChanged.removeListener(onStorageChange);
   }, []);
 
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
   const handleSetupComplete = () => {
     setHasConfig(true);
     setView('dashboard');
   };
+
+  // Don't render anything until we know splash state
+  if (showSplash === null) {
+    return null;
+  }
+
+  // Show splash screen for first-time users
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
 
   return (
     <div
@@ -45,7 +68,7 @@ function App() {
       >
         <div className="flex items-center gap-2">
           <img
-            src="/iunami-logo.png"
+            src={currentTheme === 'purple-dark' ? '/iunami-logo-light.png' : '/iunami-logo.png'}
             alt="Iunami AI Logo"
             className="w-25 h-25 rounded object-cover"
           />

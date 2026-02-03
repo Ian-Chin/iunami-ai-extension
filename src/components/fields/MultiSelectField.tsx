@@ -24,11 +24,18 @@ export default function MultiSelectField({ value, options, onChange }: MultiSele
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all ${
+            className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
               selected
                 ? 'bg-indigo-100 border-indigo-300 text-indigo-700'
-                : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'
+                : ''
             }`}
+            style={selected ? {} : {
+              background: 'var(--input-bg)',
+              color: 'var(--card-text-muted)',
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: 'var(--input-border)'
+            }}
           >
             {opt}
           </button>

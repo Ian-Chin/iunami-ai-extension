@@ -11,7 +11,8 @@ export default function SelectField({ value, options, onChange }: SelectFieldPro
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+      className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+      style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
     >
       <option value="">Select...</option>
       {options.map((opt) => (

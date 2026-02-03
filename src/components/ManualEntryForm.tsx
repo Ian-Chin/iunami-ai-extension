@@ -99,7 +99,8 @@ export default function ManualEntryForm({
             type="number"
             value={val !== undefined ? String(val) : ''}
             onChange={(e) => updateValue(schema.name, e.target.value ? Number(e.target.value) : '')}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
             placeholder="0"
           />
         );
@@ -109,7 +110,8 @@ export default function ManualEntryForm({
             type="date"
             value={String(val ?? '')}
             onChange={(e) => updateValue(schema.name, e.target.value)}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
           />
         );
       case 'url':
@@ -118,7 +120,8 @@ export default function ManualEntryForm({
             type="url"
             value={String(val ?? '')}
             onChange={(e) => updateValue(schema.name, e.target.value)}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
             placeholder="https://..."
           />
         );
@@ -128,7 +131,8 @@ export default function ManualEntryForm({
             type="email"
             value={String(val ?? '')}
             onChange={(e) => updateValue(schema.name, e.target.value)}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
             placeholder="name@example.com"
           />
         );
@@ -138,7 +142,8 @@ export default function ManualEntryForm({
             type="text"
             value={String(val ?? '')}
             onChange={(e) => updateValue(schema.name, e.target.value)}
-            className="w-full p-2 text-[11px] bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
             placeholder={schema.type === 'phone_number' ? '+1 234 567 8900' : `Enter ${schema.name.toLowerCase()}...`}
           />
         );
@@ -162,7 +167,7 @@ export default function ManualEntryForm({
         {sortedSchemas.map((schema) => (
           <div key={schema.name} className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-gray-600">
+              <span className="text-[10px] font-bold" style={{ color: 'var(--card-text)' }}>
                 {schema.name}
                 {schema.type === 'title' && <span className="text-red-400 ml-0.5">*</span>}
               </span>
@@ -187,7 +192,7 @@ export default function ManualEntryForm({
             {showSkipped ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
           </button>
           {showSkipped && (
-            <div className="mt-1.5 text-[10px] text-gray-400 pl-4">
+            <div className="mt-1.5 text-[10px] pl-4" style={{ color: 'var(--card-text-muted)' }}>
               {skippedFields.join(', ')}
             </div>
           )}
@@ -205,7 +210,8 @@ export default function ManualEntryForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-xl transition-colors text-[11px] font-bold disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-colors text-[11px] font-bold disabled:opacity-50"
+          style={{ background: 'var(--card-bg)', color: 'var(--card-text-muted)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
         >
           <X size={12} />
           Cancel
