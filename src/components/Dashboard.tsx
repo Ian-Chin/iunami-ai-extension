@@ -9,6 +9,9 @@ import { parseSchema, buildNotionProperties, getUnsupportedFields, aiResponseToP
 import { buildSystemPrompt } from '../utils/aiPromptBuilder';
 import PreviewCard from './PreviewCard';
 import ManualEntryForm from './ManualEntryForm';
+import UpgradePopup from './UpgradePopup';
+
+const MAX_DASHBOARDS = 3;
 
 function NotionIcon({ icon, fallback: Fallback }: { icon: any, fallback: any }) {
     if (!icon) return <Fallback size={18} />;
@@ -25,6 +28,7 @@ type StatusMsg = { type: 'success' | 'error' | 'warning' | 'idle'; msg: string }
 
 export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
     const [dashboards, setDashboards] = useState<any[]>([]);
+    const [showUpgradePopup, setShowUpgradePopup] = useState(false);
 
     const loadData = () => {
         chrome.storage.local.get(['allDashboards'], (res) => {
@@ -42,11 +46,19 @@ export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
         }
     };
 
+    const handleAddClick = () => {
+        if (dashboards.length >= MAX_DASHBOARDS) {
+            setShowUpgradePopup(true);
+        } else {
+            onAddClick();
+        }
+    };
+
     return (
         <div className="p-4 space-y-4 animate-in fade-in duration-500 pb-20">
             <div className="flex justify-between items-center px-1">
                 <h2 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--page-text-muted)' }}>Workspaces</h2>
-                <button onClick={onAddClick} className="p-1.5 rounded-lg transition-colors hover:opacity-70" style={{ color: 'var(--page-text-muted)' }}>
+                <button onClick={handleAddClick} className="p-1.5 rounded-lg transition-colors hover:opacity-70" style={{ color: 'var(--page-text-muted)' }}>
                     <Plus size={18} />
                 </button>
             </div>
@@ -59,7 +71,7 @@ export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
                     <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--page-text)' }}>No workspaces yet</h3>
                     <p className="text-[11px] mb-5 max-w-50" style={{ color: 'var(--page-text-muted)' }}>Connect a Notion page to start using Magic Fill and Manual Entry.</p>
                     <button
-                        onClick={onAddClick}
+                        onClick={handleAddClick}
                         className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-bold transition-colors active:scale-[0.97]"
                     >
                         <Plus size={14} />
@@ -75,6 +87,10 @@ export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
                         onUpdateComplete={loadData}
                     />
                 ))
+            )}
+
+            {showUpgradePopup && (
+                <UpgradePopup onClose={() => setShowUpgradePopup(false)} />
             )}
         </div>
     );
@@ -179,8 +195,51 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
             })
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Groq API HTTP error:", response.status, errorText);
+            throw new Error(`AI service error (${response.status})`);
+        }
+
         const data = await response.json();
-        return JSON.parse(data.choices[0].message.content);
+
+        // Check for API error response
+        if (data.error) {
+            console.error("Groq API error:", data.error);
+            throw new Error(data.error.message || "AI service error");
+        }
+
+        // Safely access nested response
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) {
+            console.error("Unexpected Groq response structure:", data);
+            throw new Error("No response from AI");
+        }
+
+        // Clean the content (remove markdown code blocks if present)
+        let cleanContent = content.trim();
+        if (cleanContent.startsWith("```json")) {
+            cleanContent = cleanContent.slice(7);
+        } else if (cleanContent.startsWith("```")) {
+            cleanContent = cleanContent.slice(3);
+        }
+        if (cleanContent.endsWith("```")) {
+            cleanContent = cleanContent.slice(0, -3);
+        }
+        cleanContent = cleanContent.trim();
+
+        try {
+            const parsed = JSON.parse(cleanContent);
+            // Ensure we return an object (handle edge cases like empty response)
+            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+                console.error("AI returned non-object:", parsed);
+                return {};
+            }
+            return parsed;
+        } catch (parseErr) {
+            console.error("JSON parse error:", parseErr, "Content:", cleanContent);
+            throw new Error("Failed to parse AI response");
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent, dbId: string) => {
@@ -225,7 +284,18 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
                 }
             } catch (err) {
                 console.error("Magic Submit Error:", err);
-                showStatus('error', 'Failed to parse. Please try again.');
+                const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+                if (errorMsg.includes('AI service error')) {
+                    showStatus('error', 'AI service unavailable. Try again later.');
+                } else if (errorMsg.includes('No response from AI')) {
+                    showStatus('error', 'AI returned empty response. Try rephrasing.');
+                } else if (errorMsg.includes('Failed to parse AI')) {
+                    showStatus('error', 'AI response was malformed. Try again.');
+                } else if (errorMsg.includes('Connection lost')) {
+                    showStatus('error', 'Lost connection to Notion. Check your token.');
+                } else {
+                    showStatus('error', 'Failed to parse. Please try again.');
+                }
                 setLoadingStep(null);
             } finally {
                 clearTimeout(timeoutId);

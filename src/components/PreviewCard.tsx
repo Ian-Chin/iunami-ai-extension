@@ -4,6 +4,7 @@ import type { NotionPropertySchema, PropertyValue, PropertyValueMap } from '../t
 import SelectField from './fields/SelectField';
 import MultiSelectField from './fields/MultiSelectField';
 import CheckboxField from './fields/CheckboxField';
+import DateTimeField from './fields/DateTimeField';
 
 interface PreviewCardProps {
   values: PropertyValueMap;
@@ -83,12 +84,9 @@ export default function PreviewCard({
         );
       case 'date':
         return (
-          <input
-            type="date"
+          <DateTimeField
             value={String(val ?? '')}
-            onChange={(e) => updateValue(schema.name, e.target.value)}
-            className="w-full p-2 text-[11px] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-            style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
+            onChange={(v) => updateValue(schema.name, v)}
           />
         );
       default:

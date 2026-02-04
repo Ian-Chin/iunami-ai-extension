@@ -15,6 +15,7 @@ export function buildSystemPrompt(schemas: NotionPropertySchema[]): string {
     .padStart(2, '0');
   const offsetM = (Math.abs(offsetMinutes) % 60).toString().padStart(2, '0');
   const tz = `UTC${sign}${offsetH}:${offsetM}`;
+  const isoTz = `${sign}${offsetH}:${offsetM}`;
 
   const columnDescriptions = schemas
     .map((s) => {
@@ -36,7 +37,7 @@ TYPE RULES:
 - number: Return a numeric value only (no units or text).
 - select/status: Return EXACTLY one of the allowed values listed above. Pick the closest match.
 - multi_select: Return a JSON array of strings, each matching an allowed value. Example: ["Tag1", "Tag2"]
-- date: Return ISO 8601 format (YYYY-MM-DD). Convert relative dates like "tomorrow" or "next Monday" relative to today.
+- date: Return ISO 8601 format. If only date mentioned: "YYYY-MM-DD". If time is mentioned: "YYYY-MM-DDTHH:MM:SS${isoTz}" (include this exact timezone). Convert relative dates like "tomorrow" or "next Monday" relative to today. Convert times like "3pm", "15:00", "at noon" to 24-hour format.
 - checkbox: Return true or false (boolean, not string).
 - url: Return a valid URL string.
 - email: Return a valid email address.
