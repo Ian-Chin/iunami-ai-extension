@@ -147,6 +147,14 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
                         style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
                         placeholder="secret_..."
                     />
+                    <a
+                        href="https://iunamiai.vercel.app/blog/find-notion-token"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-2 text-[11px] font-medium text-indigo-500 hover:text-indigo-600 hover:underline transition-colors"
+                    >
+                        Find my token →
+                    </a>
                 </div>
 
                 <div>
