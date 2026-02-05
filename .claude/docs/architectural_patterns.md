@@ -54,8 +54,7 @@ No external state management library. State is managed with React `useState` hoo
 - `DashboardItem` receives `onRemove` and `onUpdateComplete` (`Dashboard.tsx:53-55`)
 
 **Loading state pattern** (repeated in every component):
-- `Dashboard.tsx:64` - `isUpdating` for refresh
-- `Dashboard.tsx:67` - `isMagicLoading` for AI submit
+- `Dashboard.tsx` - `isUpdating` for refresh, `loadingStep` for manual entry operations
 - `Settings.tsx:7` - `isLoading` for workspace sync
 
 All loading states render `<Loader2 className="animate-spin" />` from lucide-react.
@@ -79,20 +78,7 @@ Rendered with conditional styling at `Settings.tsx:172`: green bg for success, r
 
 **Convention for new operations:** Use `{ type, msg }` status objects for any user-facing multi-step operation that can fail.
 
-## 5. AI Integration Pattern
-
-AI parsing is encapsulated in `parseWithAI` (`Dashboard.tsx:93-131`). It calls the Groq API directly (not proxied through the service worker, since it's not a Notion call).
-
-**Flow:**
-1. Build system prompt with database schema columns and current date (`Dashboard.tsx:102-111`)
-2. POST to `https://api.groq.com/openai/v1/chat/completions` with `response_format: { type: "json_object" }` (`Dashboard.tsx:113-127`)
-3. Parse JSON response into `AiParsedData` interface (`Dashboard.tsx:18-20, 130`)
-
-**Property mapping** (`Dashboard.tsx:170-184`): AI output keys are matched case-insensitively to Notion schema keys. Supported types: `title`, `date`, `select`, `rich_text`, `number`.
-
-**Convention:** AI config lives in `config.ts`. The model and key are referenced via `CONFIG.GROQ_API_KEY` and `CONFIG.AI_MODEL` (`Dashboard.tsx:116, 120`).
-
-## 6. Recursive Block Scanning
+## 5. Recursive Block Scanning
 
 Notion pages can contain nested structures (columns, callouts, toggles). The database scanner handles this with recursive traversal.
 
@@ -105,15 +91,7 @@ Notion pages can contain nested structures (columns, callouts, toggles). The dat
 
 **Convention:** Any future block-level scanning should follow this recursive pattern and always deduplicate results.
 
-## 7. Timeout Safety for Async Operations
-
-Long-running operations use a safety timeout to prevent UI lockup.
-
-**Implementation:** `Dashboard.tsx:146-152` - 15-second timeout on Magic Fill submit. Uses `setTimeout` + `clearTimeout` in the `finally` block.
-
-**Convention:** Any user-facing async operation that could hang (network calls, AI parsing) should include a timeout with user feedback.
-
-## 8. Notion Icon Rendering
+## 6. Notion Icon Rendering
 
 A shared `NotionIcon` component (`Dashboard.tsx:8-16`) handles the three Notion icon types: `emoji`, `external` URL, and `file` URL. Falls back to a provided Lucide icon component.
 
@@ -123,7 +101,7 @@ A shared `NotionIcon` component (`Dashboard.tsx:8-16`) handles the three Notion 
 
 **Convention:** Always use `NotionIcon` when rendering Notion entity icons. Pass the appropriate Lucide icon as `fallback`.
 
-## 9. Input Validation Pattern
+## 7. Input Validation Pattern
 
 User inputs are validated before API calls using regex extraction.
 
@@ -133,13 +111,13 @@ User inputs are validated before API calls using regex extraction.
 
 **Convention:** Validate and normalize inputs before making API calls. Extract IDs from URLs rather than requiring specific input formats.
 
-## 10. Component File Organization
+## 8. Component File Organization
 
 Each component is a single file with a default export. Sub-components (like `DashboardItem`, `NotionIcon`) are defined in the same file as their parent and are not exported.
 
 **Naming:**
 - Components: PascalCase (`Dashboard`, `Settings`, `DashboardItem`)
-- Event handlers: `handle{Action}` (`handleRemove`, `handleUpdate`, `handleMagicSubmit`, `handleConnect`)
-- State: camelCase descriptive (`isOpen`, `isMagicLoading`, `activeDbId`)
+- Event handlers: `handle{Action}` (`handleRemove`, `handleUpdate`, `handleManualSubmit`, `handleConnect`)
+- State: camelCase descriptive (`isOpen`, `isLoading`, `activeDbId`)
 - Chrome message types: SCREAMING_SNAKE_CASE (`NOTION_API_CALL`)
 - Storage keys: camelCase (`notionToken`, `allDashboards`)

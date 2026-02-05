@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     LayoutDashboard, Database, Plus, ChevronDown, ChevronUp,
-    RefreshCcw, Loader2, Trash2, Sparkles, Send, CheckCircle, XCircle, ClipboardList
+    RefreshCcw, Loader2, Trash2, CheckCircle, XCircle, ClipboardList
 } from 'lucide-react';
-import { CONFIG } from '../../config';
 import type { NotionPropertySchema, PropertyValueMap } from '../types/notion';
-import { parseSchema, buildNotionProperties, getUnsupportedFields, aiResponseToPropertyValueMap } from '../utils/notionPropertyMapper';
-import { buildSystemPrompt } from '../utils/aiPromptBuilder';
-import PreviewCard from './PreviewCard';
+import { parseSchema, buildNotionProperties, getUnsupportedFields } from '../utils/notionPropertyMapper';
 import ManualEntryForm from './ManualEntryForm';
 import UpgradePopup from './UpgradePopup';
 
@@ -23,7 +20,7 @@ function NotionIcon({ icon, fallback: Fallback }: { icon: any, fallback: any }) 
     return <Fallback size={18} />;
 }
 
-type LoadingStep = null | 'connecting' | 'thinking' | 'preview' | 'submitting';
+type LoadingStep = null | 'connecting' | 'submitting';
 type StatusMsg = { type: 'success' | 'error' | 'warning' | 'idle'; msg: string };
 
 export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
@@ -69,7 +66,7 @@ export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
                         <LayoutDashboard size={24} className="text-indigo-400" />
                     </div>
                     <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--page-text)' }}>No workspaces yet</h3>
-                    <p className="text-[11px] mb-5 max-w-50" style={{ color: 'var(--page-text-muted)' }}>Connect a Notion page to start using Magic Fill and Manual Entry.</p>
+                    <p className="text-[11px] mb-5 max-w-50" style={{ color: 'var(--page-text-muted)' }}>Connect a Notion page to start using Manual Entry.</p>
                     <button
                         onClick={handleAddClick}
                         className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-bold transition-colors active:scale-[0.97]"
@@ -106,15 +103,8 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
     const [isOpen, setIsOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [activeDbId, setActiveDbId] = useState<string | null>(null);
-    const [magicText, setMagicText] = useState("");
     const [loadingStep, setLoadingStep] = useState<LoadingStep>(null);
     const [statusMsg, setStatusMsg] = useState<StatusMsg>({ type: 'idle', msg: '' });
-
-    // Preview state
-    const [previewData, setPreviewData] = useState<PropertyValueMap | null>(null);
-    const [previewSchemas, setPreviewSchemas] = useState<NotionPropertySchema[]>([]);
-    const [previewSkipped, setPreviewSkipped] = useState<string[]>([]);
-    const [previewDbId, setPreviewDbId] = useState<string | null>(null);
 
     // Manual entry state
     const [showManualEntry, setShowManualEntry] = useState(false);
@@ -174,178 +164,6 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
                 }
             } catch (err) { console.error(err); } finally { setIsUpdating(false); }
         });
-    };
-
-    const parseWithAI = async (userInput: string, schemas: NotionPropertySchema[]): Promise<Record<string, any>> => {
-        const systemPrompt = buildSystemPrompt(schemas);
-
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${CONFIG.GROQ_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: CONFIG.AI_MODEL,
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userInput }
-                ],
-                response_format: { type: "json_object" }
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Groq API HTTP error:", response.status, errorText);
-            throw new Error(`AI service error (${response.status})`);
-        }
-
-        const data = await response.json();
-
-        // Check for API error response
-        if (data.error) {
-            console.error("Groq API error:", data.error);
-            throw new Error(data.error.message || "AI service error");
-        }
-
-        // Safely access nested response
-        const content = data?.choices?.[0]?.message?.content;
-        if (!content) {
-            console.error("Unexpected Groq response structure:", data);
-            throw new Error("No response from AI");
-        }
-
-        // Clean the content (remove markdown code blocks if present)
-        let cleanContent = content.trim();
-        if (cleanContent.startsWith("```json")) {
-            cleanContent = cleanContent.slice(7);
-        } else if (cleanContent.startsWith("```")) {
-            cleanContent = cleanContent.slice(3);
-        }
-        if (cleanContent.endsWith("```")) {
-            cleanContent = cleanContent.slice(0, -3);
-        }
-        cleanContent = cleanContent.trim();
-
-        try {
-            const parsed = JSON.parse(cleanContent);
-            // Ensure we return an object (handle edge cases like empty response)
-            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-                console.error("AI returned non-object:", parsed);
-                return {};
-            }
-            return parsed;
-        } catch (parseErr) {
-            console.error("JSON parse error:", parseErr, "Content:", cleanContent);
-            throw new Error("Failed to parse AI response");
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent, dbId: string) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleMagicSubmit(dbId);
-        }
-    };
-
-    // Phase 1: Parse → Preview
-    const handleMagicSubmit = async (dbId: string) => {
-        if (!magicText.trim() || isSubmittingRef.current) return;
-        isSubmittingRef.current = true;
-
-        setLoadingStep('connecting');
-        setStatusMsg({ type: 'idle', msg: '' });
-
-        const timeoutId = setTimeout(() => {
-            setLoadingStep(null);
-            isSubmittingRef.current = false;
-            showStatus('error', 'Request timed out. Please try again.');
-        }, 30000);
-
-        chrome.storage.local.get(['notionToken'], async (res) => {
-            try {
-                const schemaCache = await fetchSchema(dbId, res.notionToken as string);
-                if (!schemaCache) throw new Error("Connection lost.");
-
-                setLoadingStep('thinking');
-
-                const aiData = await parseWithAI(magicText, schemaCache.schemas);
-                const valueMap = aiResponseToPropertyValueMap(aiData, schemaCache.schemas, schemaCache.rawProperties);
-
-                setPreviewData(valueMap);
-                setPreviewSchemas(schemaCache.schemas);
-                setPreviewSkipped(schemaCache.skippedFields);
-                setPreviewDbId(dbId);
-                setLoadingStep('preview');
-
-                if (schemaCache.skippedFields.length > 0) {
-                    showStatus('warning', `Skipped: ${schemaCache.skippedFields.join(', ')}`);
-                }
-            } catch (err) {
-                console.error("Magic Submit Error:", err);
-                const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-                if (errorMsg.includes('AI service error')) {
-                    showStatus('error', 'AI service unavailable. Try again later.');
-                } else if (errorMsg.includes('No response from AI')) {
-                    showStatus('error', 'AI returned empty response. Try rephrasing.');
-                } else if (errorMsg.includes('Failed to parse AI')) {
-                    showStatus('error', 'AI response was malformed. Try again.');
-                } else if (errorMsg.includes('Connection lost')) {
-                    showStatus('error', 'Lost connection to Notion. Check your token.');
-                } else {
-                    showStatus('error', 'Failed to parse. Please try again.');
-                }
-                setLoadingStep(null);
-            } finally {
-                clearTimeout(timeoutId);
-                isSubmittingRef.current = false;
-            }
-        });
-    };
-
-    // Phase 2: Confirm → Send to Notion
-    const handleConfirmSubmit = async (editedValues: PropertyValueMap) => {
-        if (!previewDbId || isSubmittingRef.current) return;
-        isSubmittingRef.current = true;
-        setLoadingStep('submitting');
-
-        chrome.storage.local.get(['notionToken'], async (res) => {
-            try {
-                const notionProperties = buildNotionProperties(editedValues, previewSchemas);
-
-                const finalRes = await chrome.runtime.sendMessage({
-                    type: 'NOTION_API_CALL',
-                    endpoint: `/pages`,
-                    method: 'POST',
-                    token: res.notionToken,
-                    body: { parent: { database_id: previewDbId }, properties: notionProperties }
-                });
-
-                if (finalRes.success) {
-                    setMagicText("");
-                    setPreviewData(null);
-                    setPreviewDbId(null);
-                    setLoadingStep(null);
-                    showStatus('success', 'Synced to Notion!');
-                } else {
-                    showStatus('error', finalRes.error || 'Failed to sync.');
-                    setLoadingStep('preview');
-                }
-            } catch (err) {
-                console.error("Confirm Submit Error:", err);
-                showStatus('error', 'Failed to sync. Please try again.');
-                setLoadingStep('preview');
-            } finally {
-                isSubmittingRef.current = false;
-            }
-        });
-    };
-
-    const handleCancelPreview = () => {
-        setPreviewData(null);
-        setPreviewDbId(null);
-        setLoadingStep(null);
     };
 
     // Manual Entry handlers
@@ -419,21 +237,17 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
         } else {
             setActiveDbId(dbId);
         }
-        setMagicText("");
-        setPreviewData(null);
-        setPreviewDbId(null);
         setShowManualEntry(false);
         setManualDbId(null);
         setLoadingStep(null);
         setStatusMsg({ type: 'idle', msg: '' });
     };
 
-    const isLoading = loadingStep === 'connecting' || loadingStep === 'thinking' || loadingStep === 'submitting';
+    const isLoading = loadingStep === 'connecting' || loadingStep === 'submitting';
 
     const loadingLabel = (() => {
         switch (loadingStep) {
             case 'connecting': return 'Connecting to database...';
-            case 'thinking': return 'AI is thinking...';
             case 'submitting': return 'Syncing to Notion...';
             default: return '';
         }
@@ -499,18 +313,6 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
                                         </div>
                                     )}
 
-                                    {/* Preview Card (shown after AI parsing) */}
-                                    {previewData && previewDbId === db.id && (
-                                        <PreviewCard
-                                            values={previewData}
-                                            schemas={previewSchemas}
-                                            skippedFields={previewSkipped}
-                                            onConfirm={handleConfirmSubmit}
-                                            onCancel={handleCancelPreview}
-                                            isSubmitting={loadingStep === 'submitting'}
-                                        />
-                                    )}
-
                                     {/* Manual Entry Form */}
                                     {showManualEntry && manualDbId === db.id && (
                                         <ManualEntryForm
@@ -522,50 +324,18 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
                                         />
                                     )}
 
-                                    {/* MAGIC FILL SECTION (hidden during preview/manual) */}
-                                    {!previewData && !showManualEntry && !isLoading && (
-                                        <>
-                                            <div className="relative space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1.5 text-indigo-500">
-                                                        <Sparkles size={10} /><span className="text-[9px] font-black uppercase tracking-widest">Magic Fill</span>
-                                                    </div>
-                                                    <div className="text-[8px] font-bold uppercase tracking-widest opacity-60" style={{ color: 'var(--card-text-muted)' }}>
-                                                        Press Enter to Sync
-                                                    </div>
-                                                </div>
-
-                                                <div className="relative">
-                                                    <textarea
-                                                        value={magicText}
-                                                        onChange={(e) => setMagicText(e.target.value)}
-                                                        onKeyDown={(e) => handleKeyDown(e, db.id)}
-                                                        className="w-full p-3 text-[11px] rounded-xl outline-none min-h-15 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                                        style={{ background: 'var(--input-focus-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
-                                                        placeholder="Try: 'Follow up with John tomorrow'"
-                                                    />
-                                                    <button
-                                                        onClick={() => handleMagicSubmit(db.id)}
-                                                        disabled={!magicText.trim()}
-                                                        className="absolute bottom-2 right-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:scale-95 transition-all disabled:bg-gray-300 disabled:active:scale-100"
-                                                    >
-                                                        <Send size={14} />
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* MANUAL ENTRY BUTTON */}
-                                            <div className="pt-1">
-                                                <button
-                                                    onClick={() => handleOpenManualEntry(db.id)}
-                                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl transition-colors active:scale-[0.98]"
-                                                    style={{ background: 'var(--card-bg)', color: 'var(--card-text-muted)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
-                                                >
-                                                    <ClipboardList size={14} />
-                                                    <span className="text-[11px] font-bold">Manual Entry</span>
-                                                </button>
-                                            </div>
-                                        </>
+                                    {/* MANUAL ENTRY BUTTON */}
+                                    {!showManualEntry && !isLoading && (
+                                        <div className="pt-1">
+                                            <button
+                                                onClick={() => handleOpenManualEntry(db.id)}
+                                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl transition-colors active:scale-[0.98]"
+                                                style={{ background: 'var(--card-bg)', color: 'var(--card-text-muted)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
+                                            >
+                                                <ClipboardList size={14} />
+                                                <span className="text-[11px] font-bold">Manual Entry</span>
+                                            </button>
+                                        </div>
                                     )}
 
                                     {/* Status message */}

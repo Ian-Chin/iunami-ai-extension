@@ -109,32 +109,3 @@ export function getUnsupportedFields(
     .map(([name]) => name);
 }
 
-export function aiResponseToPropertyValueMap(
-  aiData: Record<string, any>,
-  schemas: NotionPropertySchema[],
-  rawProperties: Record<string, any>
-): PropertyValueMap {
-  const result: PropertyValueMap = {};
-
-  for (const [key, val] of Object.entries(aiData)) {
-    const actualKey = schemas.find(
-      (s) => s.name.toLowerCase() === key.toLowerCase()
-    )?.name;
-    if (!actualKey) continue;
-
-    const prop = rawProperties[actualKey];
-    if (!prop) continue;
-
-    if (prop.type === 'checkbox') {
-      result[actualKey] = val === true || val === 'true';
-    } else if (prop.type === 'number') {
-      result[actualKey] = Number(val);
-    } else if (prop.type === 'multi_select') {
-      result[actualKey] = Array.isArray(val) ? val : [String(val)];
-    } else {
-      result[actualKey] = String(val);
-    }
-  }
-
-  return result;
-}
