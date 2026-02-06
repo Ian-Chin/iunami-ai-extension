@@ -6,9 +6,9 @@ import {
 import type { NotionPropertySchema, PropertyValueMap } from '../types/notion';
 import { parseSchema, buildNotionProperties, getUnsupportedFields } from '../utils/notionPropertyMapper';
 import ManualEntryForm from './ManualEntryForm';
-import UpgradePopup from './UpgradePopup';
+import FeedbackPopup from './UpgradePopup';
 
-const MAX_DASHBOARDS = 3;
+const FEEDBACK_THRESHOLD = 3;
 
 function NotionIcon({ icon, fallback: Fallback }: { icon: any, fallback: any }) {
     if (!icon) return <Fallback size={18} />;
@@ -44,11 +44,16 @@ export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
     };
 
     const handleAddClick = () => {
-        if (dashboards.length >= MAX_DASHBOARDS) {
+        if (dashboards.length >= FEEDBACK_THRESHOLD) {
             setShowUpgradePopup(true);
         } else {
             onAddClick();
         }
+    };
+
+    const handleContinueAdd = () => {
+        setShowUpgradePopup(false);
+        onAddClick();
     };
 
     return (
@@ -87,7 +92,10 @@ export default function Dashboard({ onAddClick }: { onAddClick: () => void }) {
             )}
 
             {showUpgradePopup && (
-                <UpgradePopup onClose={() => setShowUpgradePopup(false)} />
+                <FeedbackPopup
+                    onClose={() => setShowUpgradePopup(false)}
+                    onContinue={handleContinueAdd}
+                />
             )}
         </div>
     );
@@ -144,24 +152,62 @@ function DashboardItem({ dash, onRemove, onUpdateComplete }: { dash: any, onRemo
         return cache;
     };
 
+    // Recursive scanner to find databases inside columns, callouts, etc.
+    const scanForDatabases = async (blockId: string, notionToken: string): Promise<any[]> => {
+        const response = await chrome.runtime.sendMessage({
+            type: 'NOTION_API_CALL',
+            endpoint: `/blocks/${blockId}/children`,
+            method: 'GET',
+            token: notionToken
+        });
+
+        if (!response.success) return [];
+
+        let foundDbs: any[] = [];
+        const blocks = response.data.results;
+
+        for (const block of blocks) {
+            if (block.type === 'child_database') {
+                foundDbs.push({
+                    id: block.id,
+                    title: block.child_database.title,
+                    icon: block.icon || null
+                });
+            } else if (block.type === 'link_to_database') {
+                foundDbs.push({
+                    id: block.link_to_database.database_id,
+                    title: "Linked Database",
+                    icon: block.icon || null
+                });
+            } else if (block.has_children) {
+                const subDbs = await scanForDatabases(block.id, notionToken);
+                foundDbs = [...foundDbs, ...subDbs];
+            }
+        }
+        return foundDbs;
+    };
+
     const handleUpdate = async (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsUpdating(true);
         chrome.storage.local.get(['notionToken', 'allDashboards'], async (res) => {
             try {
                 const pageRes = await chrome.runtime.sendMessage({ type: 'NOTION_API_CALL', endpoint: `/pages/${dash.id}`, method: 'GET', token: res.notionToken });
-                const childrenRes = await chrome.runtime.sendMessage({ type: 'NOTION_API_CALL', endpoint: `/blocks/${dash.id}/children`, method: 'GET', token: res.notionToken });
-                if (pageRes.success && childrenRes.success) {
-                    const pageData = pageRes.data;
-                    const newDbs = childrenRes.data.results.filter((b: any) => b.type === 'child_database').map((db: any) => ({
-                        id: db.id, title: db.child_database.title, icon: db.icon || null
-                    }));
-                    const updatedDashboards = (res.allDashboards as any[]).map(d =>
-                        d.id === dash.id ? { ...d, name: pageData.properties.title?.title?.[0]?.plain_text || pageData.properties.Name?.title?.[0]?.plain_text || "Untitled", icon: pageData.icon, databases: newDbs } : d
-                    );
-                    await chrome.storage.local.set({ allDashboards: updatedDashboards });
-                    onUpdateComplete();
+                if (!pageRes.success) {
+                    console.error('Failed to fetch page');
+                    setIsUpdating(false);
+                    return;
                 }
+
+                const pageData = pageRes.data;
+                const allDetectedDbs = await scanForDatabases(dash.id, res.notionToken as string);
+                const uniqueDbs = Array.from(new Map(allDetectedDbs.map(db => [db.id, db])).values());
+
+                const updatedDashboards = (res.allDashboards as any[]).map(d =>
+                    d.id === dash.id ? { ...d, name: pageData.properties.title?.title?.[0]?.plain_text || pageData.properties.Name?.title?.[0]?.plain_text || "Untitled", icon: pageData.icon, databases: uniqueDbs } : d
+                );
+                await chrome.storage.local.set({ allDashboards: updatedDashboards });
+                onUpdateComplete();
             } catch (err) { console.error(err); } finally { setIsUpdating(false); }
         });
     };

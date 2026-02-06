@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Loader2, Wifi, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import Tutorial from './Tutorial';
 
 export default function Settings({ onComplete }: { onComplete: () => void }) {
     const [token, setToken] = useState('');
     const [dbIdInput, setDbIdInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState({ type: 'idle', msg: '' });
+    const [showTutorial, setShowTutorial] = useState(false);
 
     useEffect(() => {
         chrome.storage.local.get(['notionToken'], (res) => {
@@ -132,6 +134,10 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
         }
     };
 
+    if (showTutorial) {
+        return <Tutorial onBack={() => setShowTutorial(false)} />;
+    }
+
     return (
         <div className="p-6 h-full flex flex-col gap-6" style={{ background: 'var(--card-bg)' }}>
             <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--card-text)' }}>Add Workspace</h2>
@@ -147,14 +153,12 @@ export default function Settings({ onComplete }: { onComplete: () => void }) {
                         style={{ background: 'var(--input-bg)', color: 'var(--card-text)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--input-border)' }}
                         placeholder="secret_..."
                     />
-                    <a
-                        href="https://iunamiai.vercel.app/blog/find-notion-token"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
+                        onClick={() => setShowTutorial(true)}
                         className="inline-block mt-2 text-[11px] font-medium text-indigo-500 hover:text-indigo-600 hover:underline transition-colors"
                     >
-                        Find my token →
-                    </a>
+                        How to create my token →
+                    </button>
                 </div>
 
                 <div>

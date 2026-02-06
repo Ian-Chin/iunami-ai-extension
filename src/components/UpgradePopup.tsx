@@ -1,15 +1,16 @@
 import React from 'react';
-import { X, Sparkles, ExternalLink } from 'lucide-react';
+import { X, MessageSquare } from 'lucide-react';
 
-interface UpgradePopupProps {
+interface FeedbackPopupProps {
   onClose: () => void;
+  onContinue: () => void;
 }
 
-const APP_DOWNLOAD_URL = 'https://iunamiai.vercel.app/';
+const STORE_URL = 'https://chromewebstore.google.com/detail/YOUR_EXTENSION_ID';
 
-export default function UpgradePopup({ onClose }: UpgradePopupProps) {
-  const handleDownload = () => {
-    window.open(APP_DOWNLOAD_URL, '_blank');
+export default function FeedbackPopup({ onClose, onContinue }: FeedbackPopupProps) {
+  const handleFeedback = () => {
+    window.open(STORE_URL, '_blank');
   };
 
   return (
@@ -37,36 +38,36 @@ export default function UpgradePopup({ onClose }: UpgradePopupProps) {
         {/* Content */}
         <div className="flex flex-col items-center text-center">
           {/* Icon */}
-          <div className="w-16 h-16 bg-linear-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-            <Sparkles size={32} className="text-white" />
+          <div className="w-16 h-16 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-center mb-4">
+            <MessageSquare size={28} className="text-indigo-500" />
           </div>
 
           {/* Title */}
           <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--card-text)' }}>
-            Workspace Limit Reached
+            Enjoying Iunami?
           </h2>
 
           {/* Description */}
           <p className="text-[12px] mb-6 leading-relaxed" style={{ color: 'var(--card-text-muted)' }}>
-            You've reached the maximum of 3 workspaces on the extension. Download our app for unlimited workspaces and the full experience.
+            Your feedback helps us improve! Let us know what features you'd like to see in future updates.
           </p>
 
           {/* CTA Button */}
           <button
-            onClick={handleDownload}
+            onClick={handleFeedback}
             className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-[13px] font-bold transition-all active:scale-[0.98] shadow-lg"
           >
-            <ExternalLink size={16} />
-            Download the App
+            <MessageSquare size={16} />
+            Give Us Feedback
           </button>
 
           {/* Secondary action */}
           <button
-            onClick={onClose}
+            onClick={onContinue}
             className="mt-3 text-[11px] font-medium hover:underline"
             style={{ color: 'var(--card-text-muted)' }}
           >
-            Maybe later
+            Continue adding workspace
           </button>
         </div>
       </div>

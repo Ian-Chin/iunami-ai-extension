@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Star, Github, Globe, ArrowRight, MessageSquare, ChevronRight, Palette } from 'lucide-react';
+import { Sparkles, Github, Globe, ArrowRight, MessageSquare, ChevronRight, Palette } from 'lucide-react';
 
 const THEME_PRESETS = [
   {
@@ -58,9 +58,9 @@ export default function MoreInfo() {
             <li>All Extension Features</li>
             <li>Frequent Updates</li>
           </ul>
-          <button className="mt-4 flex items-center gap-2 text-[11px] font-bold bg-white text-indigo-600 px-4 py-2 rounded-xl hover:bg-indigo-50 transition-colors">
-            Get Notified <ArrowRight size={14} />
-          </button>
+          <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold bg-white text-indigo-600 px-4 py-2 rounded-xl hover:bg-indigo-50 transition-colors">
+            Learn More <ArrowRight size={14} />
+          </a>
         </div>
       </div>
 
@@ -73,15 +73,15 @@ export default function MoreInfo() {
         style={{ background: 'var(--card-bg)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--card-border)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="bg-yellow-50 p-2 rounded-xl text-yellow-500">
-            <Star size={20} fill="currentColor" />
+          <div className="bg-indigo-50 p-2 rounded-xl text-indigo-500">
+            <MessageSquare size={20} />
           </div>
           <div>
-            <p className="font-bold text-sm" style={{ color: 'var(--card-text)' }}>Rate iunami</p>
-            <p className="text-[11px] font-medium" style={{ color: 'var(--card-text-muted)' }}>Support us on the Web Store</p>
+            <p className="font-bold text-sm" style={{ color: 'var(--card-text)' }}>Give Us Feedback</p>
+            <p className="text-[11px] font-medium" style={{ color: 'var(--card-text-muted)' }}>Help improve the Iunami mobile app</p>
           </div>
         </div>
-        <MessageSquare size={18} style={{ color: 'var(--card-text-muted)' }} className="group-hover:text-indigo-400 transition-colors" />
+        <ChevronRight size={16} style={{ color: 'var(--card-text-muted)' }} className="group-hover:translate-x-1 transition-transform" />
       </a>
       <div className="space-y-3">
         <a
